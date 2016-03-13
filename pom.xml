@@ -4,7 +4,7 @@
 
 	<groupId>org.openmrs.module</groupId>
 	<artifactId>cloneandexportomrs</artifactId>
-	<version>1.0</version>
+	<version>1.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>Clone and export OpenMRS Module</name>
 	<description>Clones and exports the whole openmrs instance through the web</description>
