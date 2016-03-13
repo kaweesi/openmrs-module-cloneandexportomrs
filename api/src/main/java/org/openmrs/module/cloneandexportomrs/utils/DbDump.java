@@ -1,5 +1,6 @@
 package org.openmrs.module.cloneandexportomrs.utils;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -10,9 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
 
@@ -26,7 +25,7 @@ public class DbDump {
 	private static final String fileEncoding = "UTF8";
 	
     /** Dump the whole database to an SQL string */
-    public static void dumpDB(Properties props, boolean showProgress, Class showProgressToClass) throws Exception {
+    public static void dumpDB(Properties props) throws Exception {
     	String filename = props.getProperty("filename");
     	String folder= props.getProperty("folder");
         String driverClassName = props.getProperty("driver.class");
@@ -37,16 +36,19 @@ public class DbDump {
         Class.forName(driverClassName);
         dbConn = DriverManager.getConnection(driverURL, props);
         dbMetaData = dbConn.getMetaData();
+        File folderToStoreTo = new File(folder);
         
-        FileOutputStream fos = new FileOutputStream(folder + filename);        
+        if(!folderToStoreTo.exists())
+        	folderToStoreTo.mkdirs();
+        
+        FileOutputStream fos = new FileOutputStream(folder + File.separator + filename);        
         OutputStreamWriter result = new OutputStreamWriter(fos, fileEncoding);            
         
         String catalog = props.getProperty("catalog");
         String schema = props.getProperty("schemaPattern");
         
         ResultSet rs = dbMetaData.getTables(catalog, schema, null, null);
-        int progressCnt = 0;
-
+        
         result.write( "/*\n" + 
         		" * DB jdbc url: " + driverURL + "\n" +
         		" * Database product & version: " + dbMetaData.getDatabaseProductName() + " " + dbMetaData.getDatabaseProductVersion() + "\n" +
@@ -56,10 +58,8 @@ public class DbDump {
         result.write("\nSET FOREIGN_KEY_CHECKS=0;\n");
         
         List<String> tableVector = new Vector<String>();
-        int progressTotal = 0;
         while(rs.next()) {
             String tableName = rs.getString("TABLE_NAME");
-            progressTotal++;
             tableVector.add(tableName);               
         }
         rs.beforeFirst();
@@ -73,17 +73,7 @@ public class DbDump {
                 String tableType = rs.getString("TABLE_TYPE");
                 
                 if (tableVector.contains(tableName)) {
-
-                	progressCnt++;
-                	//BackupFormController.getProgressInfo().put(filename, "Backing up table " + progressCnt + " of " + progressTotal + " (" + tableName + ")...");
-
-                    if (showProgress) {
-                        Map<String,String> info = (Map<String,String>)showProgressToClass.getMethod("getProgressInfo", null).invoke(showProgressToClass);
-                        info.put(filename, "Backing up table " + progressCnt + " of " + progressTotal + " (" + tableName + ")...");
-                        showProgressToClass.getMethod("setProgressInfo", new Class[]{Map.class}).invoke(showProgressToClass, info);
-                    }
-
-                    if ("TABLE".equalsIgnoreCase(tableType)) {
+                	if ("TABLE".equalsIgnoreCase(tableType)) {
 
                     	result.write( "\n\n-- Structure for table `" + tableName + "`\n" );
                     	result.write( "DROP TABLE IF EXISTS `"+tableName+"`;\n" );
@@ -105,10 +95,8 @@ public class DbDump {
         }
         
         result.write("\nSET FOREIGN_KEY_CHECKS=1;\n");
-        
         result.flush();
         result.close();
-        
         dbConn.close();       
     }
 
@@ -135,6 +123,7 @@ public class DbDump {
                     } else {
                         String outputValue = value.toString();
                         outputValue = outputValue.replaceAll("\'","\\\\'");
+                        
                         result.write( "'"+outputValue+"'" );
                     }
                 }

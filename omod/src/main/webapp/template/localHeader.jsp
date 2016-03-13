@@ -7,8 +7,8 @@
 	<li
 		<c:if test='<%= request.getRequestURI().contains("/manage") %>'>class="active"</c:if>>
 		<a
-		href="${pageContext.request.contextPath}/module/cloneandexportomrs/manage.form"><spring:message
-				code="cloneandexportomrs.manage" /></a>
+		href="${pageContext.request.contextPath}/module/cloneandexportomrs/clone.form"><spring:message
+				code="cloneandexportomrs.clone" /></a>
 	</li>
 	
 	<!-- Add further links here -->

@@ -29,6 +29,7 @@ import org.hibernate.SessionFactory;
 import org.openmrs.module.cloneandexportomrs.DumpDatabase;
 import org.openmrs.module.cloneandexportomrs.api.db.CloneAndExportOmrsDAO;
 import org.openmrs.module.cloneandexportomrs.utils.CloneAndExportOmrsUtils;
+import org.openmrs.module.cloneandexportomrs.utils.Zip;
 import org.openmrs.web.WebConstants;
 
 /**
@@ -58,7 +59,11 @@ public class HibernateCloneAndExportOmrsDAO implements CloneAndExportOmrsDAO {
 		File omrsDbClone = new File(dir);
 
 		if (omrsDbClone.exists() && omrsDbClone.isDirectory()) {
-			omrsDbClone.delete();
+			try {
+				FileUtils.deleteDirectory(omrsDbClone);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 			return true;
 		} else
 			return false;
@@ -74,7 +79,7 @@ public class HibernateCloneAndExportOmrsDAO implements CloneAndExportOmrsDAO {
 		if (omrsClone.exists() && omrsClone.isDirectory()) {
 			File finalF = getOpenMRSDataZip(CloneAndExportOmrsUtils.OPENMRS_DATA_DIR, CloneAndExportOmrsUtils.FINAL_CLONE_PATH);
 			
-			deleteCloneAndExportOmrsDirectory(omrsClone.getAbsolutePath());
+			deleteCloneAndExportOmrsDirectory(CloneAndExportOmrsUtils.DATA_DIR);
 			
 			return finalF.getAbsolutePath();
 		}
@@ -83,18 +88,25 @@ public class HibernateCloneAndExportOmrsDAO implements CloneAndExportOmrsDAO {
 	}
 
 	private void prepareOpenMRSTomcatDataAndWarToExport() {
-		File omrsTomcatWeb = new File(CloneAndExportOmrsUtils.TOMCAT_WEBAPPS_OPENMRS_DIR);
+		//File omrsTomcatWeb = new File(CloneAndExportOmrsUtils.TOMCAT_WEBAPPS_OPENMRS_DIR);
 		File omrsTomcatWebWar = new File(CloneAndExportOmrsUtils.TOMCAT_WEBAPPS_OPENMRS_DIR + ".war");
-		File openmrsTomcatDest = new File(CloneAndExportOmrsUtils.OPENMRS_TOMCAT_STORAGE_DIR + File.separator + WebConstants.WEBAPP_NAME);
+		//File openmrsTomcatDest = new File(CloneAndExportOmrsUtils.OPENMRS_TOMCAT_STORAGE_DIR + File.separator + WebConstants.WEBAPP_NAME);
 		File openmrsWarTomcatDest = new File(CloneAndExportOmrsUtils.OPENMRS_TOMCAT_STORAGE_DIR + File.separator + WebConstants.WEBAPP_NAME + ".war");
 
 		try {
+			/*
 			if (omrsTomcatWeb.exists() && omrsTomcatWeb.isDirectory()) {
 				FileUtils.copyDirectory(omrsTomcatWeb, openmrsTomcatDest);
 			}
-	
+			*/
 			if (omrsTomcatWebWar.exists() && !omrsTomcatWebWar.isDirectory()) {
 				FileUtils.copyFile(omrsTomcatWebWar, openmrsWarTomcatDest);
+				
+				Zip.zip(CloneAndExportOmrsUtils.OPENMRS_TOMCAT_STORAGE_DIR + File.separator, WebConstants.WEBAPP_NAME + ".war");
+				try {
+					File f = new File(CloneAndExportOmrsUtils.OPENMRS_TOMCAT_STORAGE_DIR + File.separator + WebConstants.WEBAPP_NAME + ".war");
+					f.delete();
+				} catch (SecurityException e) {}
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
