@@ -35,4 +35,7 @@ public interface CloneAndExportOmrsService extends OpenmrsService {
 	 * Add service methods here
 	 * 
 	 */
+	public String downloadDbBackUp();
+
+	void dumpDbUsingTerminal();
 }

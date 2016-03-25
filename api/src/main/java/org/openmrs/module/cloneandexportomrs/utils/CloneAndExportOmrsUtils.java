@@ -20,4 +20,8 @@ public class CloneAndExportOmrsUtils {
 	public static String CLONE_PREFIX = "-clone-";
 	
 	public static String FINAL_CLONE_PATH = System.getProperty("user.home") + File.separator + WebConstants.WEBAPP_NAME +"-clone.zip";
+	
+	public static String MY_DB_BACKUPFILE_NAME = "cloneandexportomrs-db.sql";
+
+	public static String OPENMRS_DB_MODULE_BACKUP_FOLDER = OPENMRS_DATA_DIR + File.separator + "backup";
 }

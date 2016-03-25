@@ -21,5 +21,9 @@ import org.openmrs.module.cloneandexportomrs.api.CloneAndExportOmrsService;
 public interface CloneAndExportOmrsDAO {
 
 	public String prepareCurrentOpenMRSDataDirectoryToExport();
+
+	public String downloadDbBackUp();
+
+	public void dumpDbUsingTerminal();
 	
 }

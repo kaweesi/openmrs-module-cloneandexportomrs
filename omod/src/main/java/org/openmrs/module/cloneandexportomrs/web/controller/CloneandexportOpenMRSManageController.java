@@ -19,12 +19,14 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.cloneandexportomrs.api.CloneAndExportOmrsService;
+import org.openmrs.web.WebConstants;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,6 +43,29 @@ public class  CloneandexportOpenMRSManageController {
 	@RequestMapping(value = "/module/cloneandexportomrs/clone", method = RequestMethod.GET)
 	public void clone(ModelMap model) {
 		
+	}
+	
+	@RequestMapping(value = "/module/cloneandexportomrs/links", method = RequestMethod.GET)
+	public void links(ModelMap model) {
+		
+	}
+	
+	@RequestMapping(value = "/module/cloneandexportomrs/downloadDb", method = RequestMethod.GET)
+	public void downloadDb(ModelMap model) {
+		
+	}
+	
+	@RequestMapping(value = "/module/cloneandexportomrs/downloadDb", method = RequestMethod.POST)
+	public void downloadDbPost(ModelMap model, HttpServletResponse response) {
+		String clone = Context.getService(CloneAndExportOmrsService.class).downloadDbBackUp();
+		
+		try {
+			exportZipFile(response, 4096, clone);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	@RequestMapping(value = "/module/cloneandexportomrs/clone", method = RequestMethod.POST)
@@ -86,6 +111,24 @@ public class  CloneandexportOpenMRSManageController {
 			inputStream.close();
 			outStream.close();
 			(new File(fullPath)).delete();
+		}
+	}
+	
+	@RequestMapping(value = "/module/cloneandexportomrs/dumpDb", method = RequestMethod.GET)
+	public void dumpDBonTerminalGet(ModelMap model) {
+	}
+	
+	@RequestMapping(value = "/module/cloneandexportomrs/dumpDb", method = RequestMethod.POST)
+	public void dumpDBonTerminal(ModelMap model, HttpServletResponse response, HttpServletRequest request) {
+		try {
+			Context.getService(CloneAndExportOmrsService.class).dumpDbUsingTerminal();
+			
+			response.sendRedirect("dumpDb.form");
+			request.getSession().setAttribute(WebConstants.OPENMRS_MSG_ATTR, "Successfully dumped, go to <a href='downloadDb.form'>downloadDb.form</a> to download it");
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			request.getSession().setAttribute(WebConstants.OPENMRS_ERROR_ATTR, e.getMessage());
 		}
 	}
 }

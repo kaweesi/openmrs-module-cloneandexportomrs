@@ -5,10 +5,16 @@
 				code="admin.title.short" /></a></li>
 
 	<li
-		<c:if test='<%= request.getRequestURI().contains("/manage") %>'>class="active"</c:if>>
+		<c:if test='<%= request.getRequestURI().contains("/clone") %>'>class="active"</c:if>>
 		<a
 		href="${pageContext.request.contextPath}/module/cloneandexportomrs/clone.form"><spring:message
 				code="cloneandexportomrs.clone" /></a>
+	</li>
+	<li
+		<c:if test='<%= request.getRequestURI().contains("/links") %>'>class="active"</c:if>>
+		<a
+		href="${pageContext.request.contextPath}/module/cloneandexportomrs/links.list"><spring:message
+				code="Links" /></a>
 	</li>
 	
 	<!-- Add further links here -->

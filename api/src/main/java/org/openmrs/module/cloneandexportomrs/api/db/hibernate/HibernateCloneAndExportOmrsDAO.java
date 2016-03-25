@@ -18,6 +18,11 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -26,6 +31,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.SessionFactory;
+import org.openmrs.api.context.Context;
 import org.openmrs.module.cloneandexportomrs.DumpDatabase;
 import org.openmrs.module.cloneandexportomrs.api.db.CloneAndExportOmrsDAO;
 import org.openmrs.module.cloneandexportomrs.utils.CloneAndExportOmrsUtils;
@@ -74,39 +80,46 @@ public class HibernateCloneAndExportOmrsDAO implements CloneAndExportOmrsDAO {
 		prepareOpenMRSTomcatDataAndWarToExport();
 		File omrsClone = new File(CloneAndExportOmrsUtils.OPENMRS_DATA_DIR);
 		DumpDatabase dump = new DumpDatabase();
-		
+
 		dump.execute();
 		if (omrsClone.exists() && omrsClone.isDirectory()) {
-			File finalF = getOpenMRSDataZip(CloneAndExportOmrsUtils.OPENMRS_DATA_DIR, CloneAndExportOmrsUtils.FINAL_CLONE_PATH);
-			
+			File finalF = getOpenMRSDataZip(CloneAndExportOmrsUtils.OPENMRS_DATA_DIR,
+					CloneAndExportOmrsUtils.FINAL_CLONE_PATH);
+
 			deleteCloneAndExportOmrsDirectory(CloneAndExportOmrsUtils.DATA_DIR);
-			
+
 			return finalF.getAbsolutePath();
 		}
-		
+
 		return null;
 	}
 
 	private void prepareOpenMRSTomcatDataAndWarToExport() {
-		//File omrsTomcatWeb = new File(CloneAndExportOmrsUtils.TOMCAT_WEBAPPS_OPENMRS_DIR);
+		// File omrsTomcatWeb = new
+		// File(CloneAndExportOmrsUtils.TOMCAT_WEBAPPS_OPENMRS_DIR);
 		File omrsTomcatWebWar = new File(CloneAndExportOmrsUtils.TOMCAT_WEBAPPS_OPENMRS_DIR + ".war");
-		//File openmrsTomcatDest = new File(CloneAndExportOmrsUtils.OPENMRS_TOMCAT_STORAGE_DIR + File.separator + WebConstants.WEBAPP_NAME);
-		File openmrsWarTomcatDest = new File(CloneAndExportOmrsUtils.OPENMRS_TOMCAT_STORAGE_DIR + File.separator + WebConstants.WEBAPP_NAME + ".war");
+		// File openmrsTomcatDest = new
+		// File(CloneAndExportOmrsUtils.OPENMRS_TOMCAT_STORAGE_DIR +
+		// File.separator + WebConstants.WEBAPP_NAME);
+		File openmrsWarTomcatDest = new File(CloneAndExportOmrsUtils.OPENMRS_TOMCAT_STORAGE_DIR + File.separator
+				+ WebConstants.WEBAPP_NAME + ".war");
 
 		try {
 			/*
-			if (omrsTomcatWeb.exists() && omrsTomcatWeb.isDirectory()) {
-				FileUtils.copyDirectory(omrsTomcatWeb, openmrsTomcatDest);
-			}
-			*/
+			 * if (omrsTomcatWeb.exists() && omrsTomcatWeb.isDirectory()) {
+			 * FileUtils.copyDirectory(omrsTomcatWeb, openmrsTomcatDest); }
+			 */
 			if (omrsTomcatWebWar.exists() && !omrsTomcatWebWar.isDirectory()) {
 				FileUtils.copyFile(omrsTomcatWebWar, openmrsWarTomcatDest);
-				
-				Zip.zip(CloneAndExportOmrsUtils.OPENMRS_TOMCAT_STORAGE_DIR + File.separator, WebConstants.WEBAPP_NAME + ".war");
+
+				Zip.zip(CloneAndExportOmrsUtils.OPENMRS_TOMCAT_STORAGE_DIR + File.separator,
+						WebConstants.WEBAPP_NAME + ".war");
 				try {
-					File f = new File(CloneAndExportOmrsUtils.OPENMRS_TOMCAT_STORAGE_DIR + File.separator + WebConstants.WEBAPP_NAME + ".war");
+					File f = new File(CloneAndExportOmrsUtils.OPENMRS_TOMCAT_STORAGE_DIR + File.separator
+							+ WebConstants.WEBAPP_NAME + ".war");
 					f.delete();
-				} catch (SecurityException e) {}
+				} catch (SecurityException e) {
+				}
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -116,7 +129,7 @@ public class HibernateCloneAndExportOmrsDAO implements CloneAndExportOmrsDAO {
 	private File getOpenMRSDataZip(String sourceDirectory, String zipFile) {
 		File dirObj = new File(sourceDirectory);
 		ZipOutputStream out;
-		
+
 		try {
 			out = new ZipOutputStream(new FileOutputStream(zipFile));
 
@@ -133,7 +146,7 @@ public class HibernateCloneAndExportOmrsDAO implements CloneAndExportOmrsDAO {
 
 	private void addDirectoriesAndFilesToZip(File dirObj, ZipOutputStream out, String sourceDirectory) {
 		byte[] tmpBuf = new byte[1024];
-		
+
 		if (dirObj.isDirectory()) {
 			File[] files = dirObj.listFiles();
 			for (Integer i = 0; i < files.length; i++) {
@@ -146,7 +159,7 @@ public class HibernateCloneAndExportOmrsDAO implements CloneAndExportOmrsDAO {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-			} 
+			}
 		} else {
 			try {
 				addFileToZip(out, sourceDirectory, dirObj, tmpBuf);
@@ -160,7 +173,7 @@ public class HibernateCloneAndExportOmrsDAO implements CloneAndExportOmrsDAO {
 			throws FileNotFoundException, IOException {
 		FileInputStream in = new FileInputStream(file.getAbsolutePath());
 		String entryPath = (new File(sourceDirectory)).toURI().relativize(file.toURI()).getPath();
-		//System.out.println("Adding: " + entryPath);
+		// System.out.println("Adding: " + entryPath);
 		out.putNextEntry(new ZipEntry(entryPath));
 		int len;
 		while ((len = in.read(tmpBuf)) > 0) {
@@ -168,5 +181,102 @@ public class HibernateCloneAndExportOmrsDAO implements CloneAndExportOmrsDAO {
 		}
 		out.closeEntry();
 		in.close();
+	}
+
+	/**
+	 * Depends on the presence of the Database backup module
+	 * 
+	 * @return
+	 */
+	@Override
+	public String downloadDbBackUp() {
+		String pathToZip = null;
+		String backUpFolder = CloneAndExportOmrsUtils.OPENMRS_DB_MODULE_BACKUP_FOLDER;
+		File backUpDir = new File(backUpFolder);
+
+		Arrays.sort(backUpDir.listFiles(), new Comparator<Object>() {
+			public int compare(Object o1, Object o2) {
+				if (((File) o1).lastModified() > ((File) o2).lastModified()) {
+					return -1;
+				} else if (((File) o1).lastModified() < ((File) o2).lastModified()) {
+					return +1;
+				} else {
+					return 0;
+				}
+			}
+
+		});
+		if (backUpDir.exists() && backUpDir.isDirectory()) {
+			if (myBackUpExists(backUpDir.list())) {
+				File realFile = new File(backUpFolder + File.separator + CloneAndExportOmrsUtils.MY_DB_BACKUPFILE_NAME);
+
+				if (realFile.exists() && realFile.isFile() && realFile.length() > 0) {
+					pathToZip = realFile.getAbsolutePath();
+				}
+			} else {
+				for (String file : backUpDir.list()) {
+					if (file.startsWith("openmrs.backup.") && file.endsWith(".sql.zip")) {
+						File realFile = new File(backUpFolder + File.separator + file);
+
+						if (realFile.length() > 0) {
+							pathToZip = realFile.getAbsolutePath();
+						}
+					}
+				}
+			}
+		}
+
+		return pathToZip;
+	}
+
+	private boolean myBackUpExists(String[] list) {
+		boolean exists = false;
+
+		for (int i = 0; i < list.length; i++) {
+			if (list[i].equals(CloneAndExportOmrsUtils.MY_DB_BACKUPFILE_NAME)) {
+				exists = true;
+				break;
+			}
+		}
+		return exists;
+	}
+
+	@Override
+	public void dumpDbUsingTerminal() {
+		String user = Context.getRuntimeProperties().getProperty("connection.username");
+		String pswd = Context.getRuntimeProperties().getProperty("connection.password");
+		String db = null;
+		Properties props = new Properties();
+		props.put("user", user);
+		props.put("password", pswd);
+
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+			db = DriverManager.getConnection(Context.getRuntimeProperties().getProperty("connection.url"), props)
+					.getCatalog();
+			System.out.println("Getting Ready to dump: " + db);
+		} catch (SQLException e1) {
+			e1.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		File f = new File(CloneAndExportOmrsUtils.OPENMRS_DB_MODULE_BACKUP_FOLDER);
+		
+		if(!f.exists() || !f.isDirectory()) {
+			f.mkdirs();
+		}
+		
+		String dumpCommand = "mysqldump -u" + user + " -p" + pswd + " " + db + " > "
+				+ CloneAndExportOmrsUtils.OPENMRS_DB_MODULE_BACKUP_FOLDER + File.separator + CloneAndExportOmrsUtils.MY_DB_BACKUPFILE_NAME;
+
+		try {
+			if (StringUtils.isNotBlank(db)) {
+				String[] cmdarray = {"/bin/sh","-c", dumpCommand}; 
+				
+				Runtime.getRuntime().exec(cmdarray);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

@@ -46,6 +46,14 @@ public class CloneAndExportOmrsServiceImpl extends BaseOpenmrsService implements
 	public String prepareCurrentOpenMRSDataDirectoryToExport() {
 		return dao.prepareCurrentOpenMRSDataDirectoryToExport();
 	}
-    
-    
+
+	@Override
+	public String downloadDbBackUp() {
+		return dao.downloadDbBackUp();
+	}
+	
+	@Override
+	public void dumpDbUsingTerminal() {
+		dao.dumpDbUsingTerminal();
+	}
 }
