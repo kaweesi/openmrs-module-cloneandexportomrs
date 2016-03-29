@@ -81,8 +81,13 @@ public class HibernateCloneAndExportOmrsDAO implements CloneAndExportOmrsDAO {
 		File omrsClone = new File(CloneAndExportOmrsUtils.OPENMRS_DATA_DIR);
 		DumpDatabase dump = new DumpDatabase();
 
-		dump.execute();
 		if (omrsClone.exists() && omrsClone.isDirectory()) {
+			File dbBackup = new File(CloneAndExportOmrsUtils.OPENMRS_DB_MODULE_BACKUP_FOLDER);
+			if (dbBackup.exists() && dbBackup.isDirectory() && dbBackup.list().length > 0) {
+				// Do nothing, don't run db backup since we have one already
+			} else {
+				dump.execute();
+			}
 			File finalF = getOpenMRSDataZip(CloneAndExportOmrsUtils.OPENMRS_DATA_DIR,
 					CloneAndExportOmrsUtils.FINAL_CLONE_PATH);
 
@@ -261,18 +266,21 @@ public class HibernateCloneAndExportOmrsDAO implements CloneAndExportOmrsDAO {
 			e.printStackTrace();
 		}
 		File f = new File(CloneAndExportOmrsUtils.OPENMRS_DB_MODULE_BACKUP_FOLDER);
-		
-		if(!f.exists() || !f.isDirectory()) {
+
+		if (!f.exists() || !f.isDirectory()) {
 			f.mkdirs();
 		}
-		
+
+		// TODO instead of depending on user adding mysql to PATH, find where
+		// MySQL bin as and run this command using full path to it
 		String dumpCommand = "mysqldump -u" + user + " -p" + pswd + " " + db + " > "
-				+ CloneAndExportOmrsUtils.OPENMRS_DB_MODULE_BACKUP_FOLDER + File.separator + CloneAndExportOmrsUtils.MY_DB_BACKUPFILE_NAME;
+				+ CloneAndExportOmrsUtils.OPENMRS_DB_MODULE_BACKUP_FOLDER + File.separator
+				+ CloneAndExportOmrsUtils.MY_DB_BACKUPFILE_NAME;
 
 		try {
 			if (StringUtils.isNotBlank(db)) {
-				String[] cmdarray = {"/bin/sh","-c", dumpCommand}; 
-				
+				String[] cmdarray = { "/bin/sh", "-c", dumpCommand };
+
 				Runtime.getRuntime().exec(cmdarray);
 			}
 		} catch (IOException e) {

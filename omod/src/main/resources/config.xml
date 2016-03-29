@@ -32,9 +32,7 @@
 	
 	<!-- Maps hibernate file's, if present -->
 	<mappingFiles>
-				
 		CloneAndExportOmrs.hbm.xml
-				
 	</mappingFiles>
 
 	<!-- Internationalization -->
