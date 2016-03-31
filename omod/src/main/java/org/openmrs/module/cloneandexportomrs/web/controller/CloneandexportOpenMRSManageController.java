@@ -61,6 +61,7 @@ public class  CloneandexportOpenMRSManageController {
 		
 		try {
 			exportZipFile(response, 4096, clone);
+			response.sendRedirect("downloadDb.form");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -123,12 +124,14 @@ public class  CloneandexportOpenMRSManageController {
 		try {
 			Context.getService(CloneAndExportOmrsService.class).dumpDbUsingTerminal();
 			
-			response.sendRedirect("dumpDb.form");
 			request.getSession().setAttribute(WebConstants.OPENMRS_MSG_ATTR, "Successfully dumped, go to <a href='downloadDb.form'>downloadDb.form</a> to download it");
-		} catch (IOException e) {
-			e.printStackTrace();
 		} catch (Exception e) {
 			request.getSession().setAttribute(WebConstants.OPENMRS_ERROR_ATTR, e.getMessage());
+		}
+		try {
+			response.sendRedirect("dumpDb.form");
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 }
