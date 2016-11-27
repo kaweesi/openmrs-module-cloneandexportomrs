@@ -18,8 +18,11 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Properties;
@@ -86,7 +89,8 @@ public class HibernateCloneAndExportOmrsDAO implements CloneAndExportOmrsDAO {
 			if (dbBackup.exists() && dbBackup.isDirectory() && dbBackup.list().length > 0) {
 				// Do nothing, don't run db backup since we have one already
 			} else {
-				dump.execute();
+				// TODO manually backup
+				// dump.execute();
 			}
 			File finalF = getOpenMRSDataZip(CloneAndExportOmrsUtils.OPENMRS_DATA_DIR,
 					CloneAndExportOmrsUtils.FINAL_CLONE_PATH);
@@ -252,13 +256,13 @@ public class HibernateCloneAndExportOmrsDAO implements CloneAndExportOmrsDAO {
 		String pswd = Context.getRuntimeProperties().getProperty("connection.password");
 		String db = null;
 		Properties props = new Properties();
+		String connUrl = Context.getRuntimeProperties().getProperty("connection.url");
+
 		props.put("user", user);
 		props.put("password", pswd);
-
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
-			db = DriverManager.getConnection(Context.getRuntimeProperties().getProperty("connection.url"), props)
-					.getCatalog();
+			db = DriverManager.getConnection(connUrl, props).getCatalog();
 			System.out.println("Getting Ready to dump: " + db);
 		} catch (SQLException e1) {
 			e1.printStackTrace();
@@ -273,18 +277,70 @@ public class HibernateCloneAndExportOmrsDAO implements CloneAndExportOmrsDAO {
 
 		// TODO instead of depending on user adding mysql to PATH, find where
 		// MySQL bin as and run this command using full path to it
-		String dumpCommand = "mysqldump -u" + user + " -p" + pswd + " " + db + " > "
+		String mysqlHome = getMySQLBinFolder(connUrl, user, pswd);
+		String dumpCommand = mysqlHome + "mysqldump -u\"" + user + "\" -p\"" + pswd + "\" " + db + " > "
 				+ CloneAndExportOmrsUtils.OPENMRS_DB_MODULE_BACKUP_FOLDER + File.separator
 				+ CloneAndExportOmrsUtils.MY_DB_BACKUPFILE_NAME;
 
 		try {
 			if (StringUtils.isNotBlank(db)) {
-				String[] cmdarray = { "/bin/sh", "-c", dumpCommand };
+				String[] cmdarray = null;
+				String osName = System.getProperty("os.name").toLowerCase();
+
+				if (osName.indexOf("nix") >= 0 || osName.indexOf("nux") >= 0 || osName.indexOf("aix") > 0) {
+					String[] cmds = { "/bin/sh", "-c", dumpCommand };
+					cmdarray = cmds;
+				} else if (osName.indexOf("win") >= 0) {
+					String[] cmds = { "cmd.exe", "/c", dumpCommand };
+					cmdarray = cmds;
+				} else if (osName.indexOf("mac") >= 0) {
+					String[] cmds = { "/bin/bash", "-c", dumpCommand };
+					cmdarray = cmds;
+				}
 
 				Runtime.getRuntime().exec(cmdarray);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	private String getMySQLBinFolder(String url, String user, String pass) {
+		String mysqlFolderPath = "";
+
+		Connection conn = null;
+		Statement stmt = null;
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+			conn = DriverManager.getConnection(url, user, pass);
+			stmt = conn.createStatement();
+
+			String sql = "select @@basedir";
+			ResultSet rs = stmt.executeQuery(sql);
+			while (rs.next()) {
+				String str = rs.getString("@@basedir");
+				if (str.indexOf("XAMPP") > 0)
+					mysqlFolderPath = rs.getString("@@basedir") + File.separator + "bin" + File.separator;
+				break;
+			}
+			rs.close();
+		} catch (SQLException se) {
+			se.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (stmt != null)
+					conn.close();
+			} catch (SQLException se) {
+			}
+			try {
+				if (conn != null)
+					conn.close();
+			} catch (SQLException se) {
+				se.printStackTrace();
+			}
+		}
+		return mysqlFolderPath;
 	}
 }
