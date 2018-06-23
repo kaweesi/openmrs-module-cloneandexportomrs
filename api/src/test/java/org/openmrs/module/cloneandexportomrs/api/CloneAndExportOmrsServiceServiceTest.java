@@ -13,7 +13,7 @@
  */
 package org.openmrs.module.cloneandexportomrs.api;
 
-import static org.junit.Assert.*;
+import org.junit.Assert;
 import org.junit.Test;
 import org.openmrs.api.context.Context;
 import org.openmrs.test.BaseModuleContextSensitiveTest;
@@ -25,6 +25,6 @@ public class  CloneAndExportOmrsServiceServiceTest extends BaseModuleContextSens
 	
 	@Test
 	public void shouldSetupContext() {
-		assertNotNull(Context.getService(CloneAndExportOmrsService.class));
+		Assert.assertNotNull(Context.getService(CloneAndExportOmrsService.class));
 	}
 }
